@@ -1,0 +1,20 @@
+{
+  "name": "deputy-cloud-functions",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@bitbucket.org/outright-digital/deputy-cloud-functions.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "homepage": "https://bitbucket.org/outright-digital/deputy-cloud-functions#readme",
+  "description": "",
+  "dependencies": {
+    "firebase-admin": "^9.1.1",
+    "firebase-functions": "^3.11.0"
+  }
+}
