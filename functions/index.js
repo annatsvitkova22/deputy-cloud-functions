@@ -44,44 +44,50 @@ const sgMail = require('@sendgrid/mail');
 sgMail.setApiKey(SENDGRID_API_KEY);
 
 
-exports.createUsersToAlgolia = functions.region('europe-west3').firestore.document('appeals/{appealId}').onCreate( async (snap, context) => {
-    const newValue = snap.data();
-    newValue.objectID = snap.id;
+// exports.createUsersToAlgolia = functions.region('europe-west3').firestore.document('appeals/{appealId}').onCreate( async (snap, context) => {
+//     const newValue = snap.data();
+//     newValue.objectID = snap.id;
+//     newValue.id = snap.id;
 
-    const index = algolia.initIndex('appeals');
-    index.saveObject(newValue);
-});
+//     const index = algolia.initIndex('appeals');
+//     index.saveObject(newValue);
+// });
 
-exports.updateUsersToAlgolia = functions.region('europe-west3').firestore.document('appeals/{appealId}').onUpdate( async (snap, context) => {
-    const data = snap.after.data();
-    data.objectID = snap.after.id;
+// exports.updateUsersToAlgolia = functions.region('europe-west3').firestore.document('appeals/{appealId}').onUpdate( async (snap, context) => {
+//     const data = snap.after.data();
+//     data.objectID = snap.after.id;
+//     data.id = snap.after.id;
 
-    const index = algolia.initIndex('appeals');
-    index.saveObject(data);
-});
+//     const index = algolia.initIndex('appeals');
+//     index.saveObject(data);
+// });
 
-exports.deleteUsersToAlgolia = functions.region('europe-west3').firestore.document('appeals/{appealId}').onDelete( async (snap, context) => {
-    const index = algolia.initIndex('appeals');
-    index.deleteObject(snap.id);
-});
+// exports.deleteUsersToAlgolia = functions.region('europe-west3').firestore.document('appeals/{appealId}').onDelete( async (snap, context) => {
+//     const index = algolia.initIndex('appeals');
+//     index.deleteObject(snap.id);
+// });
 
-exports.sendDataToAngolia = functions.region('europe-west3').https.onRequest((req, res) => {
-    let appeals = [];
-    admin.firestore().collection('appeals').get().then((docs) => {
+// exports.sendDataToAngolia = functions.region('europe-west3').https.onRequest((req, res) => {
+//     cors(req, res, async () => {
+//         let appeals = [];
+//         admin.firestore().collection('appeals').get().then((docs) => {
 
-        docs.forEach((doc) => {
-            const appeal = doc.data();
-            appeal.objectID = doc.id;
-            appeals.push(appeal);
-        })
+//             docs.forEach((doc) => {
+//                 const appeal = doc.data();
+//                 appeal.objectID = doc.id;
+//                 appeal.id = doc.id;
+//                 appeals.push(appeal);
+//             });
 
-        const index = algolia.initIndex('appeals');
+//             const index = algolia.initIndex('appeals');
 
-        index.saveObjects(appeals, function( err, content) {
-            res.status(200).send(content);
-        })
-    })
-})
+//             index.saveObjects(appeals, function( err, content) {
+//                 res.status(200).send(content);
+//             })
+//         })
+//     })
+// })
+
 
 // exports.createCustomUser = functions.region('europe-west3').https.onRequest(async (req, res) => {
 //     cors(req, res, async () => {
@@ -187,51 +193,49 @@ exports.sendDataToAngolia = functions.region('europe-west3').https.onRequest((re
 //     })
 // });
 
-// const sendEmail = async (data) => {
-//     const msg = {
-//         to: data.userEmail,
-//         cc: data.cc ? data.cc : 'em5796.sluga.pl.ua',
-//         from: 'no-reply@em5796.sluga.pl.ua',
-//         subject: data.subject,
-//         text: data.text,
-//         html: data.html,
-//     };
+const sendEmail = async (data) => {
+    const msg = {
+        to: data.userEmail,
+        from: 'no-reply@em5796.sluga.pl.ua',
+        subject: data.subject,
+        text: data.text,
+        html: data.html,
+    };
 
-//     await sgMail.send(msg)
-//     .then(() => {
-//         return true;
-//     }).catch(err => {
-//         return err;
-//     });
-// }
+    await sgMail.send(msg)
+    .then(() => {
+        return true;
+    }).catch(err => {
+        return err;
+    });
+}
 
 
-// exports.newReq = functions.region('europe-west3').https.onRequest(async (req, res) => {
-//     cors(req, res, async() => {
-//         let emails = [];
-//         const userRefs = await admin.firestore().collection('users', ref => ref.where('role', '==', 'admin')).get();
-//         if (userRefs.size) {
-//             userRefs.forEach(userRef => {
-//                 const { email } = userRef.data();
-//                 emails.push(email);
-//             })
-//         }
-//         const msg = {
-//             to: email[0],
-//             cc: [emails],
-//             from: 'no-reply@em5796.sluga.pl.ua',
-//             subject: 'Доброго дня',
-//             text: 'Доброго дня',
-//             html: `<h1>Доброго дня</h1>`,
-//         };
-//         await sgMail.send(msg)
-//         .then(() => {
-//             res.send(true);
-//         }).catch(err => {
-//             res.status(500).send(err);
-//         });
-//     });
-// });
+exports.newReq = functions.region('europe-west3').https.onRequest(async (req, res) => {
+    cors(req, res, async() => {
+        let emails = [];
+        const userRefs = await admin.firestore().collection('users').where('role', '==', 'admin').get();
+        if (userRefs.size) {
+            userRefs.forEach(userRef => {
+                const { email } = userRef.data();
+                emails.push(email);
+            })
+        }
+        const msg = {
+            to: emails[0],
+            from: 'no-reply@em5796.sluga.pl.ua',
+            subject: 'Доброго дня',
+            text: 'Доброго дня',
+            html: `<h1>Доброго дня</h1>`,
+        };
+        await sgMail.send(msg)
+        .then(() => {
+            res.send(true);
+        }).catch(err => {
+            res.status(500).send(err);
+        });
+    });
+});
 
 
 // exports.createAppeal = functions.region('europe-west3').firestore.document('appeals/{appealId}').onCreate( async (snap, context) => {
@@ -257,61 +261,60 @@ exports.sendDataToAngolia = functions.region('europe-west3').https.onRequest((re
 //     return true; 
 // });
 
-// exports.createMessage = functions.region('europe-west3').firestore.document('messages/{messageId}').onCreate( async (snap, context) => {
-//     const messageObj = snap.data();
-//     const appealRef = admin.firestore().collection('appeals').doc(messageObj.appealId);
-//     try {
-//         if(messageObj.type == 'feedback') {
-//             await appealRef.get().then(async snap => {
-//                 const appeal = snap.data();
-//                 const deputyRef = admin.firestore().collection('users').doc(appeal.deputyId);
-//                 await deputyRef.get().then(spanshot => {
-//                     const data = spanshot.data();
-//                     const historyRating = data.historyRating;
-//                     let rating;
-//                     if (historyRating.length) {
-//                         historyRating.push(messageObj.rating);
-//                         rating = Number((historyRating.reduce((a, b) => (a + b)) / historyRating.length).toFixed(1));
-//                     } else {
-//                         rating = Number(messageObj.rating);
-//                         historyRating.push(messageObj.rating);
-//                     }
-//                     deputyRef.update({
-//                         rating,
-//                         historyRating
-//                     })
-//                 })
-//             })
-//             await userRef.get().then(async span => {
-//                 await userRef.update({countAppeals: span.data().countAppeals + 1})
+exports.createMessage = functions.region('europe-west3').firestore.document('messages/{messageId}').onCreate( async (snap, context) => {
+    const messageObj = snap.data();
+    const appealRef = admin.firestore().collection('appeals').doc(messageObj.appealId);
+    try {
+        if(messageObj.type == 'feedback') {
+            await appealRef.get().then(async snap => {
+                const appeal = snap.data();
+                const deputyRef = admin.firestore().collection('users').doc(appeal.deputyId);
+                await deputyRef.get().then(spanshot => {
+                    const data = spanshot.data();
+                    const historyRating = data.historyRating;
+                    let rating;
+                    if (historyRating.length) {
+                        historyRating.push(messageObj.rating);
+                        rating = Number((historyRating.reduce((a, b) => (a + b)) / historyRating.length).toFixed(1));
+                    } else {
+                        rating = Number(messageObj.rating);
+                        historyRating.push(messageObj.rating);
+                    }
+                    deputyRef.update({
+                        rating,
+                        historyRating
+                    })
+                })
+            })
+            await userRef.get().then(async span => {
+                await userRef.update({countAppeals: span.data().countAppeals + 1})
                 
-//             })
-//         } else if(messageObj.type == 'confirm') {
-//             let emails = [];
-//             const userRefs = await admin.firestore().collection('users', ref => ref.where('role', '==', 'admin')).get();
-//             if (userRefs.size) {
-//                 userRefs.forEach(userRef => {
-//                     const { email } = userRef.data();
-//                     emails.push(email);
-//                 })
-//             }
-//             const data = {
-//                 userEmail: emails[0],
-//                 cc: emails,
-//                 subject: 'Ваш запит виконано',
-//                 text: 'Доброго дня. Запит виконано, перевiрте та підтвердіть запит https://sluga.pl.ua',
-//                 html: `<h1>Доброго дня</h1><p>Запит виконано, перевiрте та підтвердіть його виконання. <a href='https://sluga.pl.ua/?id=${messageObj.appealId}'>https://sluga.pl.ua/?id=${messageObj.appealId}</a></p>`
-//             }
+            })
+        } else if(messageObj.type == 'confirm') {
+            let emails = [];
+            const userRefs = await admin.firestore().collection('users', ref => ref.where('role', '==', 'admin')).get();
+            if (userRefs.size) {
+                userRefs.forEach(userRef => {
+                    const { email } = userRef.data();
+                    emails.push(email);
+                })
+            }
+            const data = {
+                userEmail: emails[0],
+                subject: 'Ваш запит виконано',
+                text: 'Доброго дня. Запит виконано, перевiрте та підтвердіть запит https://sluga.pl.ua',
+                html: `<h1>Доброго дня</h1><p>Запит виконано, перевiрте та підтвердіть його виконання. <a href='https://sluga.pl.ua/?id=${messageObj.appealId}'>https://sluga.pl.ua/?id=${messageObj.appealId}</a></p>`
+            }
 
-//             return await sendEmail(data);
-//         }
+            return await sendEmail(data);
+        }
         
-//     } catch (error) {
-//         return error;
-//     }
+    } catch (error) {
+        return error;
+    }
     
-//     return true; 
-// });
+    return true; 
+});
 
 // exports.updateAppeal = functions.region('europe-west3').firestore.document('appeals/{appealId}').onUpdate( async (change, context) => {
 //     try {
@@ -344,34 +347,34 @@ exports.sendDataToAngolia = functions.region('europe-west3').https.onRequest((re
 // });
 
 
-// exports.blockAppeal = functions.region('europe-west3').https.onRequest(async (req, res) => {
-//     cors(req, res, async() => {
-//         try {
-//             const {id} = req.body;
-//             await admin.firestore().collection('appeals').doc(id).update({isBlock: true});
-//             let emails = [];
-//             const userRefs = await admin.firestore().collection('users', ref => ref.where('role', '==', 'admin')).get();
-//             if (userRefs.size) {
-//                 userRefs.forEach(userRef => {
-//                     const { email } = userRef.data();
-//                     emails.push(email);
-//                 })
-//             }
-//             const newUser = {
-//                 userEmail: emails[0],
-//                 cc: emails,
-//                 subject: 'Відхилення запиту',
-//                 text: 'Доброго дня. Депутат відхилив запит, перевірте його.',
-//                 html: `<h1>Доброго дня</h1><p>Депутат відхилив запит, перевірте його.<a href='https://sluga.pl.ua/?id=${id}'>https://sluga.pl.ua/?id=${id}</a></p>`
-//             }
-//             await sendEmail(newUser);
-//             res.send(true);
-//         } catch (error) {
-//             res.status(500).send(error);
-//         }
-//         return true; 
-//     })  
-// });
+exports.blockAppeal = functions.region('europe-west3').https.onRequest(async (req, res) => {
+    cors(req, res, async() => {
+        try {
+            const {id} = req.body;
+            await admin.firestore().collection('appeals').doc(id).update({isBlock: true});
+            let emails = [];
+            const userRefs = await admin.firestore().collection('users').where('role', '==', 'admin').get();
+            if (userRefs.size) {
+                userRefs.forEach(userRef => {
+                    const { email } = userRef.data();
+                    emails.push(email);
+                })
+            }
+            const newUser = {
+                userEmail: emails[0],
+                subject: 'Відхилення запиту',
+                text: 'Доброго дня. Депутат відхилив запит, перевірте його.',
+                html: `<h1>Доброго дня</h1><p>Депутат відхилив запит, перевірте його.<a href='https://sluga.pl.ua/?id=${id}'>https://sluga.pl.ua/?id=${id}</a></p>`
+            }
+
+            await sendEmail(newUser);
+            res.send(emails);
+        } catch (error) {
+            res.status(500).send(error);
+        }
+        return true; 
+    })  
+});
 
 
 // exports.updateEmail = functions.region('europe-west3').https.onRequest(async (req, res) => {
